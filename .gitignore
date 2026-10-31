@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.local-secret
+*.log
+coverage/
+mongodb-data/

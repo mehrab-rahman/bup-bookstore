@@ -1,0 +1,3 @@
+import {readFileSync} from 'node:fs';
+import {connect,db,client} from '../src/db.js';
+try{await connect();const covers=JSON.parse(readFileSync(new URL('../data/covers.json',import.meta.url),'utf8'));let count=0;for(const [id,cover] of Object.entries(covers)){if(new URL(cover.remoteCover).hostname!=='covers.openlibrary.org')continue;const r=await db.collection('books').updateOne({_id:id,coverFileId:{$exists:false}},{$set:{remoteCover:cover.remoteCover,coverSource:cover}});count+=r.matchedCount;}console.log(`Updated ${count} cover references. Uploaded staff covers were preserved.`);}finally{await client.close();}
