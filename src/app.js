@@ -1,3 +1,4 @@
+import {periodRange,salesReport} from './sales.js';
 import {simulationRoutes} from './payment-simulation.js';
 import express from 'express';
 import session from 'express-session';
@@ -135,6 +136,7 @@ export function createApp(){
  // Staff workspace.
  app.use('/staff',staffRequired);
  app.get('/staff',async(req,res)=>{const aggregate=await db.collection('payments').aggregate([{$match:{status:'paid'}},{$group:{_id:null,total:{$sum:'$amount'}}}]).toArray();send(res,'Staff workspace',h.staffHome,{bookCount:await db.collection('books').countDocuments({active:true}),orderCount:await db.collection('orders').countDocuments({status:{$nin:['completed','cancelled','refunded']}}),buybackCount:await db.collection('buybacks').countDocuments({status:{$nin:['paid','cancelled','rejected']}}),paidTotal:aggregate[0]?.total||0,emailConfigured:!!config.smtpHost,orders:await withPayments(await db.collection('orders').find().sort({createdAt:-1}).limit(5).toArray()),lowStock:await db.collection('books').find({active:true,variants:{$elemMatch:{stock:{$lte:3}}}}).limit(10).toArray()});});
+ app.get('/staff/sales',adminRequired,async(req,res)=>{let range;try{range=periodRange(scalarQuery(req,'period')||'monthly',scalarQuery(req,'date')||undefined);}catch(error){throw new AppError(error.message);}const sort=scalarQuery(req,'sort');send(res,'Sales & profit',h.salesPage,{...await salesReport(db,range),sort});});
  app.get('/staff/books',async(req,res)=>send(res,'Inventory',h.staffBooks,await catalogData(req,true)));
  const editData=async book=>({book,categories:(await db.collection('books').distinct('category')).sort(),courses:await db.collection('courses').find().sort({department:1,semester:1,code:1}).toArray()});
  app.get('/staff/books/new',async(req,res)=>send(res,'Add a book',h.staffBook,await editData(null)));

@@ -26,7 +26,13 @@ export function inventory(body){
    const price=Math.round(Number(priceText)*100),stock=Number(body[`${variantId}_stock`]);if(price<1||!Number.isInteger(stock)||stock<0||stock>100000)throw new AppError('Price must be positive; stock must be a whole number from 0 to 100000.');
    const value=body[`${variantId}_restock`],restockAt=value?new Date(value+'T12:00:00+06:00'):null;if(restockAt&&Number.isNaN(restockAt.getTime()))throw new AppError('Invalid expected restock date.');
    const note=typeof body[`${variantId}_note`]==='string'?body[`${variantId}_note`].trim().slice(0,500):'';
-   variants.push({id:variantId,condition,price,stock,restockAt,conditionNote:note});
+   const costText=body[`${variantId}_cost`];
+   let costPrice=null;
+   if(costText!==undefined&&costText!==''){
+     if(typeof costText!=='string'||!/^\d{1,7}(\.\d{1,2})?$/.test(costText))throw new AppError('Enter a non-negative cost with up to two decimals, or leave it blank.');
+     costPrice=Math.round(Number(costText)*100);
+   }
+   variants.push({id:variantId,condition,price,stock,costPrice,restockAt,conditionNote:note});
  }
  if(!variants.length)throw new AppError('Keep at least one physical condition.');
  const fresh=variants.find(v=>v.id==='new');if(fresh&&variants.some(v=>v.id!=='new'&&v.price>=fresh.price))throw new AppError('Used copies must cost less than new copies.');

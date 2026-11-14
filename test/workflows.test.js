@@ -45,3 +45,36 @@ test('password reset token is one use and old sessions are revoked',async()=>{co
 test('welcome, order and restock emails pass through a real local SMTP server',async()=>{const messages=[];const smtp=new SMTPServer({authOptional:true,disabledCommands:['STARTTLS'],onData(stream,session,callback){let raw='';stream.on('data',d=>raw+=d);stream.on('end',()=>{messages.push(raw);callback();});}});await new Promise(resolve=>smtp.listen(0,'127.0.0.1',resolve));const transport=nodemailer.createTransport({host:'127.0.0.1',port:smtp.server.address().port,secure:false,ignoreTLS:true});try{const pending=await db.collection('email_outbox').countDocuments({status:'pending'});const result=await deliverBatch(transport);assert.equal(result.sent,pending);assert.ok(messages.some(m=>m.includes('Welcome to BUP')));assert.ok(messages.some(m=>decodeHeaders(m).includes('order confirmation')),messages.map(m=>m.match(/Subject:.*(?:\r?\n[ \t].*)*/g)).join(' | '));assert.ok(messages.some(m=>m.includes('available again')));assert.equal((await deliverBatch(transport)).sent,0);assert.equal(await db.collection('email_outbox').countDocuments({status:'sent',text:{$exists:true}}),0);}finally{transport.close();await new Promise(resolve=>smtp.close(resolve));}});
 
 function decodeHeaders(raw){return raw.replace(/\r?\n[ \t]+/g,'').replace(/\?=\s+(?==\?UTF-8)/gi,'?=').replace(/=\?UTF-8\?([BQ])\?([^?]+)\?=/gi,(_,kind,value)=>kind.toUpperCase()==='B'?Buffer.from(value,'base64').toString():value.replace(/_/g,' ').replace(/=([0-9A-F]{2})/gi,(_,hex)=>String.fromCharCode(parseInt(hex,16))));}
+
+test('admin sales report, inventory cost validation and immutable order cost',async()=>{
+ const {inventory}=await import('../src/validation.js');
+ const input={title:'Cost test',author:'Test Author',category:'Test',reason:'Cost setup',revision:'0',new_enabled:'on',new_price:'1000',new_stock:'5',new_cost:'600.25'};
+ assert.equal(inventory(input).variants[0].costPrice,60025);
+ assert.equal(inventory({...input,new_cost:''}).variants[0].costPrice,null);
+ assert.throws(()=>inventory({...input,new_cost:'-1'}));
+ assert.throws(()=>inventory({...input,new_cost:'1.001'}));
+ const studentAgent=request.agent(app),studentLogin=await studentAgent.get('/login');
+ await studentAgent.post('/login').type('form').send({_csrf:csrf(studentLogin.text),username:user.username,password:'ChangedPassword123!',next:'/account'}).expect(302);
+ await studentAgent.get('/staff/sales').expect(403);
+ const a=request.agent(app),login=await a.get('/login');
+ await a.post('/login').type('form').send({_csrf:csrf(login.text),username:staff.username,password:'TestPassword123!',next:'/staff'}).expect(302);
+ for(const period of ['daily','weekly','monthly','yearly'])await a.get('/staff/sales?period='+period).expect(200).expect(/Gross profit/);
+ await a.get('/staff/sales?date=2026-02-30').expect(400);
+ await a.get('/staff/sales?period=unknown').expect(400);
+ await a.get('/staff/books/test-book').expect(200).expect(/Purchase cost per copy/);
+ const b={...book,_id:'cost-snapshot-book',revision:0,variants:[{id:'new',condition:'New',price:100000,costPrice:60000,stock:5}]};
+ await db.collection('books').insertOne(b);
+ await db.collection('users').updateOne({_id:user._id},{$set:{cart:[]}});
+ await s.updateCart(user._id,b._id,'new',1);
+ const o=await s.checkout(user._id,orderData(100000));assert.equal(o.items[0].unitCost,60000);
+ await db.collection('books').updateOne({_id:b._id},{$set:{'variants.0.costPrice':80000}});
+ await s.orderAction(staff,o._id,'cash',{reference:'cost-report-'+randomUUID()});
+ const {salesReport,periodRange}=await import('../src/sales.js');
+ const result=await salesReport(db,periodRange('daily'));
+ assert.ok(result.total.orders>=1);
+ const saved=await db.collection('orders').findOne({_id:o._id});assert.equal(saved.items[0].unitCost,60000);
+ const ordinaryStaff={...staff,_id:randomUUID(),username:'REPORT-STAFF',email:'report-staff@example.test',role:'staff'};
+ await db.collection('users').insertOne(ordinaryStaff);
+ const sa=request.agent(app),sl=await sa.get('/login');await sa.post('/login').type('form').send({_csrf:csrf(sl.text),username:ordinaryStaff.username,password:'TestPassword123!',next:'/staff'}).expect(302);
+ await sa.get('/staff/sales').expect(403);
+});
