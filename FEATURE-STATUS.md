@@ -23,3 +23,7 @@ The supplied logo, MongoDB Compass instructions and image replacement guide are 
 ## Validation of this correction
 
 Syntax checks passed. Browser checks verified all three payment tabs, provider selection, preview-only messaging, closing the dialog and mobile rendering, with no JavaScript errors. This patch changes the payment presentation only; the previously tested cash transaction services are unchanged.
+
+## Current payment interface 14 November 2026
+
+The current interface is the labeled bKash classroom simulation from BKASH-SIMULATION.md, replacing the multi-provider preview described above. Fixed test account/code/PIN values are checked only in the browser and not transmitted. Separate simulation records contain amount, time and reference. Cash checkout remains the order-creation path; simulated success is never recorded as a real payment.

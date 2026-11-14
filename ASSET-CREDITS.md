@@ -43,3 +43,5 @@ Additional covers are locally rendered title-and-author placeholders, not publis
 ## Additional MongoDB edition covers
 
 466 additional title/author matches are referenced directly from Open Library. See COVER-SOURCES.md and data/covers.json for per-book evidence. Staff uploads override remote images; failed remote images use a designed title fallback.
+
+bKash classroom interface logo: supplied by the project owner as codex-clipboard-5ad24afe-acfc-46d8-bf2f-47adcb643c79.png, copied to public/assets/images/bkash-logo.png. Interface layout reference: owner-supplied Notes_261114_111413.pdf. Branding is used in an explicitly labeled academic simulation; no endorsement or live gateway integration is claimed.

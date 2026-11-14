@@ -14,6 +14,7 @@ export async function tx(callback){
 }
 export async function indexes(){
   const specs={
+    payment_simulations:[[{userId:1,key:1},{unique:true}],[{userId:1,createdAt:-1},{}]],
     users:[[{username:1},{unique:true}],[{email:1},{unique:true}]],
     books:[[{title:1},{}],[{category:1,departments:1},{}],[{courseIds:1},{}],[{'variants.stock':1},{}]],
     courses:[[{department:1,semester:1},{}]],

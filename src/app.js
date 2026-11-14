@@ -1,3 +1,4 @@
+import {simulationRoutes} from './payment-simulation.js';
 import express from 'express';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
@@ -75,6 +76,7 @@ export function createApp(){
  for(const route of ['/catalog','/courses','/used'])app.get(route,async(req,res)=>send(res,'Explore the shelves',h.catalog,await catalogData(req,false,route==='/used')));
  app.get('/api/courses',async(req,res)=>res.json({courses:await db.collection('courses').find({department:scalarQuery(req,'department'),semester:/^[1-8]$/.test(scalarQuery(req,'semester'))?Number(req.query.semester):0}).sort({code:1}).project({_id:1,code:1,name:1}).toArray()}));
  app.get('/books/:id',async(req,res)=>{const book=await getBook(req.params.id);if(!book.active&&req.user?.role!=='admin'&&req.user?.role!=='staff')throw new AppError('Book unavailable.',404);send(res,book.title,h.book,{book,courses:await db.collection('courses').find({_id:{$in:book.courseIds||[]}}).limit(40).toArray(),reviews:await db.collection('reviews').find({bookId:book._id,status:'approved'}).sort({createdAt:-1}).limit(50).toArray(),canReview:req.user&&!!await db.collection('orders').findOne({userId:req.user._id,status:'completed','items.bookId':book._id})});});
+ simulationRoutes(app);
  app.get('/register',(req,res)=>req.user?res.redirect('/account'):send(res,'Create account',h.auth,{mode:'register'}));
  app.post('/register',async(req,res)=>{
   await rateLimit('register',req.ip,10);const data=parse(schemas.register,req.body);passwordValid(data.password);await validDepartment(data.department);

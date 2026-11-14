@@ -71,3 +71,7 @@ See RELEASE-NOTES.md for new features, validation evidence and operational limit
 ## Restored payment interface
 
 Checkout now includes Cards, Mobile banking and Net banking preview tabs, following the supplied reference. Use “Explore online payment options” at checkout. Electronic payments are intentionally nonfunctional; cash checkout remains available. See FEATURE-STATUS.md for the complete limitations list.
+
+## bKash classroom simulation update
+
+The older multi-provider preview has been replaced by the labeled bKash classroom flow described in BKASH-SIMULATION.md. It uses browser-only fixed test values and stores separate payment_simulations receipts. It does not charge money, create an order or change paid purchase access. The earlier descriptions of Cards/Mobile banking/Net banking tabs describe the previous interface.
