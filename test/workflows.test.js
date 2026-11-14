@@ -29,7 +29,7 @@ test('classroom bKash simulation is isolated, sequential, private and idempotent
  await db.collection('users').updateOne({_id:user._id},{$set:{cart:[]}});await s.updateCart(user._id,book._id,'new',1);
  const page=await agent.get('/checkout');assert.match(page.text,/Choose payment method/);assert.match(page.text,/Test mode/);assert.doesNotMatch(page.text,/class="payment-choice"/);const token=csrf(page.text);
  const snapshot=async()=>({orders:await db.collection('orders').countDocuments(),payments:await db.collection('payments').countDocuments(),payouts:await db.collection('payouts').countDocuments(),stock:(await db.collection('books').findOne({_id:book._id})).variants,cart:(await db.collection('users').findOne({_id:user._id})).cart});
- const before=await snapshot(),key=randomUUID();const post=(path,data)=>agent.post(path).type('form').send({_csrf:token,...data});
+ const before=await snapshot(),key=randomUUID();await agent.post('/checkout').type('form').send({_csrf:token,...orderData(100000),consent:'on'}).expect(302).expect('Location','/checkout');assert.deepEqual(await snapshot(),before);const post=(path,data)=>agent.post(path).type('form').send({_csrf:token,...data});
  await agent.post('/api/payment-simulations').type('form').send({key,delivery:'pickup'}).expect(403);
  const start=await post('/api/payment-simulations',{key,delivery:'pickup',amount:1}).expect(200);const id=start.body.id;assert.equal(start.body.amount,100000);assert.equal(start.body.simulation,true);
  assert.equal((await post('/api/payment-simulations',{key,delivery:'pickup'})).body.id,id);
