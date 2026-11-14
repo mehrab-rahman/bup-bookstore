@@ -6,8 +6,8 @@ Updated 14 November 2026. This replaces the old Cards/Mobile banking/Net banking
 
 1. In VS Code open this folder, stop the old Node process with Ctrl+C, then run `npm.cmd start` (or `npm.cmd run dev`). No new packages or environment variables are needed.
 2. Visit http://127.0.0.1:3000, sign in, add an in-stock book and open checkout.
-3. Choose **Try bKash classroom simulation**.
-4. Test account: `01000000000`. Verification code: `123456`. Test PIN: `00000`.
+3. Fill the checkout details and consent, click **Place order**, then choose **bKash** or **Cash on delivery**. Cash submits the order; bKash opens the labeled test flow.
+4. Test account: `01711223344`. Verification code: `0000`. Test PIN: `123456`.
 5. The receipt says **Simulation successful** and shows amount, Bangladesh time and a `SIM-BK-` reference. No SMS, charge or actual order is created. Use cash checkout separately to order.
 6. Wrong values are rejected and cleared. The entered values are never sent to the server or stored. The server receives only start options, random request keys and step names. Closing cancels an active simulation when the server is reachable. Unfinished sessions expire after 15 minutes (the record remains for inspection).
 
@@ -68,3 +68,5 @@ Official deployment and inspection references:
 - https://www.mongodb.com/docs/compass/query/filter/
 
 Validation completed: all 12 integration tests passed on the isolated local replica set at port 27029. Headless browser checks passed at mobile and desktop sizes, including all three stages, wrong-value rejection, receipt, close/Escape, no JavaScript errors and no entered credential values in network requests. No Atlas production data was changed during validation.
+
+The green checkout panel has been removed. The small test-mode notice remains inside bKash. Public site reported by the owner: https://bup-bookstore-gq9m.onrender.com . After Render deploys the latest commit, hard-refresh and test both payment choices.
